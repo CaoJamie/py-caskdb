@@ -39,6 +39,8 @@ For the workshop, the functions will have the following signature:
 
 def encode_header(timestamp: int, key_size: int, value_size: int) -> bytes:
     """
+    encode_header takes the key value pair and encodes them into bytes with the following scheme
+
     fixed size header, for convention on x86 use little endian encoding
     timestamp|key_size|value_size
     timestamp:  uint 4bytes little endian
@@ -53,16 +55,40 @@ def encode_header(timestamp: int, key_size: int, value_size: int) -> bytes:
 
 
 def encode_kv(timestamp: int, key: str, value: str) -> tuple[int, bytes]:
-    raise NotImplementedError
+    """
+    encode_kv takes the key value pair and encodes them into bytes with the following sheme
+
+    (timestamp|key_size|value_size)|key|value
+    with the prior bracket being the fixed 12 bit header
+    both key and value are encoded as utf-8 for simplicity
+    key length depends on the key_size
+    value length depends on the value_size
+    """
+
+    encode_key = key.encode("utf-8")
+    encode_value = value.encode("utf-8")
+    encode_header_bytes = encode_header(timestamp, len(encode_key), len(encode_value))
+    return timestamp, encode_header_bytes + encode_key + encode_value
 
 
 def decode_kv(data: bytes) -> tuple[int, str, str]:
-    raise NotImplementedError
+    """
+    decode_kv takes the key value pair and decodes them into bytes with the following sheme, assuming it is a valid kv encoding
+
+    (timestamp|key_size|value_size)|key|value
+    with the prior bracket being the fixed 12 bit header
+    both key and value are encoded as utf-8 for simplicity
+    """
+    timestamp,key_size,value_size = decode_header(data[0:12])
+    key = data[12:12+key_size].decode("utf-8")
+    value = data[12+key_size:12+key_size+value_size].decode("utf-8")
+    return timestamp, key, value
 
 
 def decode_header(data: bytes) -> tuple[int, int, int]:
     """
     decode the header of the data, assuming it is a valid header
+
     timestamp|key_size|value_size
     timestamp:  uint 4bytes little endian
     key_size:   uint 4bytes little endian
