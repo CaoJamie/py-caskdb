@@ -38,7 +38,18 @@ For the workshop, the functions will have the following signature:
 
 
 def encode_header(timestamp: int, key_size: int, value_size: int) -> bytes:
-    raise NotImplementedError
+    """
+    fixed size header, for convention on x86 use little endian encoding
+    timestamp|key_size|value_size
+    timestamp:  uint 4bytes little endian
+    key_size:   uint 4bytes little endian
+    value_size: uint 4bytes little endian
+    """
+
+    encode_timestamp = timestamp.to_bytes(4,"little")
+    encode_key_size = key_size.to_bytes(4,"little")
+    encode_value_size = value_size.to_bytes(4,"little")
+    return encode_timestamp + encode_key_size + encode_value_size
 
 
 def encode_kv(timestamp: int, key: str, value: str) -> tuple[int, bytes]:
@@ -50,4 +61,16 @@ def decode_kv(data: bytes) -> tuple[int, str, str]:
 
 
 def decode_header(data: bytes) -> tuple[int, int, int]:
-    raise NotImplementedError
+    """
+    decode the header of the data, assuming it is a valid header
+    timestamp|key_size|value_size
+    timestamp:  uint 4bytes little endian
+    key_size:   uint 4bytes little endian
+    value_size: uint 4bytes little endian
+    """
+
+    timestamp = int.from_bytes(data[0:4],"little")
+    key_size = int.from_bytes(data[4:8],"little")
+    value_size = int.from_bytes(data[8:12],"little")
+
+    return timestamp, key_size, value_size
